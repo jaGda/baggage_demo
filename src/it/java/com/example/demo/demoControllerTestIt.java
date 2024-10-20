@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.micrometer.observation.ObservationRegistry;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.filter.ServerHttpObservationFilter;
 
 @SpringBootTest
 @ExtendWith({RestDocumentationExtension.class, SpringExtension.class})
@@ -41,11 +43,16 @@ class DemoControllerTestIT {
     @Autowired
     private WebApplicationContext context;
     @Autowired
+    private ObservationRegistry observationRegistry;
+    @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
     void setup(RestDocumentationContextProvider restDocumentationContextProvider) {
+        ServerHttpObservationFilter serverHttpObservationFilter =  new ServerHttpObservationFilter(observationRegistry);
+
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilter(serverHttpObservationFilter)
                 .apply(MockMvcRestDocumentation.documentationConfiguration(restDocumentationContextProvider)
                         .operationPreprocessors()
                         .withRequestDefaults(prettyPrint(), removeHeaders(IGNORE_HEADERS))
